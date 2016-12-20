@@ -1,0 +1,45 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "24.0.2"
+    defaultConfig {
+        applicationId "com.afterecho.android.permissionsgrantingtest"
+        minSdkVersion 23
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    testCompile 'junit:junit:4.12'
+}
+
+// This creates two new Gradle tasks in the "permissions" group, one per buildType.
+// They depend on the install tasks, so if you run the grantDebugPermissions task
+// it will install the app and then grant the permissions.
+
+android.applicationVariants.all { buildType ->
+    def applicationId = buildType.applicationId
+    def adb = android.getAdbExe().toString()
+
+    def grantPermissionsTask = tasks.create("grant${buildType.name.capitalize()}Permissions") << {
+        "${adb} shell pm grant ${applicationId} android.permission.READ_CONTACTS".execute()
+    }
+    grantPermissionsTask.description = "Grants permissions for Marshmallow"
+    grantPermissionsTask.group = "permissions"
+    grantPermissionsTask.dependsOn("install${buildType.name.capitalize()}")
+}
